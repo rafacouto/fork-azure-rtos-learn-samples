@@ -113,11 +113,14 @@ void  Routine_entry(ULONG thread_input)
     while (1)
     {
         /* Activity 3: 2 timer ticks  *** preparation ***  */
-        /* Get the mutex with suspension */
         tx_thread_sleep(2);
 
         /* Activity 4: 7 timer ticks *** critical section *** */
-        /******* complete Activity 4 here -- use Activity 2 as a guide *****/
+        /* Get the mutex with suspension */
+        tx_mutex_get(&Processor, TX_WAIT_FOREVER);
+        tx_thread_sleep(7);
+        /* Release the mutex */
+        tx_mutex_put(&Processor);
 
         current_time = tx_time_get();
         printf("Current Time: %5lu    Routine Thread finished a cycle...\n",
