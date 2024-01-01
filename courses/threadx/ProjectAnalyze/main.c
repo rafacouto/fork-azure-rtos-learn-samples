@@ -25,10 +25,10 @@ Routine_counter = 0, total_Routine_time = 0;
 /* Define variables for Routine thread performance info */
 ULONG Routine_resumptions, Routine_suspensions, Routine_solicited_preemptions;
 
-/* Define variables for Urgent performance info
-   define variables here */
+/* Define variables for Urgent performance info */
+ULONG Urgent_resumptions, Urgent_suspensions, Urgent_solicited_preemptions;
 
-   /* Define function prototypes.  */
+/* Define function prototypes.  */
 void    Urgent_entry(ULONG thread_input);
 void    Routine_entry(ULONG thread_input);
 void    print_stats(ULONG);
@@ -130,7 +130,6 @@ void    Routine_entry(ULONG thread_input)
 
         /* Increment the thread counter and get timing info  */
         Routine_counter++;
-
         current_time = tx_time_get();
         cycle_time = current_time - start_time;
         total_Routine_time += cycle_time;
@@ -148,9 +147,10 @@ void print_stats(ULONG invalue)
         &Routine_suspensions, &Routine_solicited_preemptions,
         TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL);
 
-    /* Retrieve performance information for Urgent thread
-       Add tx_thread_performance_info_get service for Urgent thread here
-       and printf statements for the Urgent thread below. */
+    /* Retrieve performance information for Urgent thread */
+    tx_thread_performance_info_get(&Urgent, &Urgent_resumptions,
+        &Urgent_suspensions, &Urgent_solicited_preemptions,
+        TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL);
 
     current_time = tx_time_get();
 
@@ -164,7 +164,9 @@ void print_stats(ULONG invalue)
         printf("             Urgent avg time:    %lu\n", avg_Urgent_time);
         printf("             Routine counter:    %lu\n", Routine_counter);
         printf("            Routine avg time:    %lu\n\n", avg_Routine_time);
-
+        printf("   Urgent Thread resumptions:   %lu\n", Urgent_resumptions);
+        printf("   Urgent Thread suspensions:   %lu\n", Urgent_suspensions);
+        printf("Urgent solicited_preemptions:   %lu\n\n", Urgent_solicited_preemptions);
         printf("   Routine Thread resumptions:   %lu\n", Routine_resumptions);
         printf("   Routine Thread suspensions:   %lu\n", Routine_suspensions);
         printf("Routine solicited_preemptions:   %lu\n\n", Routine_solicited_preemptions);
