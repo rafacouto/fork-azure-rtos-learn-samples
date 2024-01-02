@@ -86,7 +86,7 @@ void    tx_application_define(void* first_unused_memory)
         TX_NO_TIME_SLICE, TX_AUTO_START);
 
     /* Create the semaphore used by both threads.  */
-    tx_semaphore_create(&my_semaphore, "my_semaphore", 2);
+    tx_semaphore_create(&my_semaphore, "my_semaphore", 1);
 
     /* Create and activate the timer */
     tx_timer_create(&stats_timer, "stats_timer", print_stats,
@@ -137,7 +137,7 @@ void    Urgent_entry(ULONG thread_input)
 
 void    Routine_entry(ULONG thread_input)
 {
-    ULONG	start_time, current_time, cycle_time, sleep_time;
+    ULONG	start_time, current_time, cycle_time, sleep_time, status;
 
     /* This is the Routine thread--it has a lower priority than the Urgent thread */
     while (1)
@@ -151,8 +151,12 @@ void    Routine_entry(ULONG thread_input)
         if (rand() % 100 < 90) sleep_time = 25;
         else sleep_time = 400;
 
-        tx_thread_sleep(sleep_time);
-        /* Insert if statement to determine whether sleep was wait aborted */
+        status = tx_thread_sleep(sleep_time);
+        if (status == TX_WAIT_ABORTED)
+        {
+            /* Sleep suspension is terminated
+               Code to handle this situation would be here */;
+        }
 
         /* Release the semaphore.  */
         tx_semaphore_put(&my_semaphore);
@@ -188,8 +192,13 @@ void    Monitor_entry(ULONG thread_input)
         if (Urgent_previous_run_count == run_count)  tx_thread_wait_abort(&Urgent);
         Urgent_previous_run_count = run_count;
 
-        /**** Insert code here for the Routine thread ****/
+        /* Determine whether the Routine thread has stalled--if so, break its suspension */
+        tx_thread_info_get(&Routine, TX_NULL, TX_NULL,
+            &run_count, TX_NULL, TX_NULL, TX_NULL, TX_NULL, TX_NULL);
 
+        /* If the previous Routine thread run count is the same as the current run count, abort suspension */
+        if (Routine_previous_run_count == run_count)  tx_thread_wait_abort(&Routine);
+        Routine_previous_run_count = run_count;
     }
 }
 
