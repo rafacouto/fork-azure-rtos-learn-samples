@@ -16,12 +16,13 @@
    /* Define the ThreadX object control blocks */
 TX_THREAD       Producer;
 TX_THREAD       Consumer;
+TX_THREAD       Consumer2;
 TX_SEMAPHORE    StorageFacility;
 TX_BYTE_POOL    my_byte_pool;
 TX_TIMER        stats_timer;
 
 /* Define the counters used in this project  */
-ULONG   Producer_counter = 0, Consumer_counter = 0;
+ULONG   Producer_counter = 0, Consumer_counter = 0, Consumer2_counter = 0;
 
 /* Define thread prototypes.  */
 void    Producer_entry(ULONG thread_input);
@@ -41,7 +42,7 @@ int main()
 
 void  tx_application_define(void* first_unused_memory)
 {
-    CHAR* Producer_stack_ptr, * Consumer_stack_ptr;
+    CHAR* Producer_stack_ptr, * Consumer_stack_ptr, * Consumer2_stack_ptr;
 
     /* Create a memory byte pool for thread stack allocation */
     tx_byte_pool_create(&my_byte_pool, "my_byte_pool",
@@ -63,6 +64,15 @@ void  tx_application_define(void* first_unused_memory)
     /* Create the Consumer thread */
     tx_thread_create(&Consumer, "Consumer", Consumer_entry, 1,
         Consumer_stack_ptr, STACK_SIZE, 15, 15,
+        TX_NO_TIME_SLICE, TX_AUTO_START);
+
+    /* Allocate the stack for the Consumer thread.  */
+    tx_byte_allocate(&my_byte_pool, (VOID**)&Consumer2_stack_ptr,
+        STACK_SIZE, TX_NO_WAIT);
+
+    /* Create the Consumer thread */
+    tx_thread_create(&Consumer2, "Consumer 2", Consumer_entry, 2,
+        Consumer2_stack_ptr, STACK_SIZE, 15, 15,
         TX_NO_TIME_SLICE, TX_AUTO_START);
 
     /* Create the counting semaphore used by both threads.  */
@@ -101,10 +111,13 @@ void    Consumer_entry(ULONG thread_input)
         /* Get an instance of the counting semaphore and
            hold it for 12 timer ticks  */
         tx_semaphore_get(&StorageFacility, TX_WAIT_FOREVER);
-        tx_thread_sleep(12);
+        tx_thread_sleep(8);
 
         /* Increment the Consumer thread counter */
-        Consumer_counter++;
+        if (thread_input == 1)
+            Consumer_counter++;
+        else
+            Consumer2_counter++;
     }
 }
 
@@ -119,9 +132,10 @@ void print_stats(ULONG invalue)
         &current_semaphore_count,
         TX_NULL, TX_NULL, TX_NULL);
 
-    printf("\n**** ProjectProducerConsumer: 2 threads, 1 byte pool, 1 counting semaphore, and 1 timer.\n\n");
+    printf("\n**** ProjectProducerConsumer: 3 threads, 1 byte pool, 1 counting semaphore, and 1 timer.\n\n");
     printf("     Current Time:                    %lu\n", current_time);
     printf("              Producer counter:       %lu\n", Producer_counter);
     printf("              Consumer counter:       %lu\n", Consumer_counter);
+    printf("              Consumer 2 counter:     %lu\n", Consumer2_counter);
     printf(" Current StorageFacility count:       %lu\n", current_semaphore_count);
 }
